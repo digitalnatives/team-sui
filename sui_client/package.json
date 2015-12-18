@@ -1,0 +1,8 @@
+{
+  "name": "sui-client",
+  "version": "0.0.1",
+  "description": "Sober unholy insanity client",
+  "devDependencies": {
+    "websocket": "1.0.22"
+  }
+}
