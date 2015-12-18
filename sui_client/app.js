@@ -1109,7 +1109,9 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 var prompt = require('prompt');
 
 var App = (function () {
-  function App(server, player_name) {
+  function App(server, player_name, is_new_game) {
+    this.is_new_game = is_new_game
+    this.game_id = ''
 
     var socket = new Socket(server, {
       logger: function (kind, msg, data) {
@@ -1118,7 +1120,7 @@ var App = (function () {
       transport: WebSocketClient
     });
 
-    socket.connect({ player: player_name });
+    socket.connect({ username: player_name });
     this.socket = socket
 
     socket.onOpen(function (ev) {
@@ -1139,25 +1141,30 @@ var App = (function () {
       }
     },
     join_lobby: {
-      value: function connect() {
-        var chan = this.socket.channel("lobby", {});
+      value: function join_lobby() {
+        var chan = this.socket.channel("game:lobby", {});
 
         chan.join().receive("ignore", function () {
           return console.log("auth error");
         }).receive("ok", function () {
-          return console.log("join ok");
-        }).after(10000, function () {
-          return console.log("Connection interruption");
+          if (this.is_new_game) {
+            this.start_new_game();
+          } else {
+            this.join_game();
+          }
+        }.bind(this)).after(10000, function () {
+          return console.log("[lobby]: Connection interruption");
         });
         chan.onError(function (e) {
-          return console.log("something went wrong");
+          return console.log("[lobby]: something went wrong", e);
         });
         chan.onClose(function (e) {
-          return console.log("channel closed");
+          return console.log("[lobby]: channel closed");
         });
 
-        chan.on("new:msg", function (msg) {
-          console.log(msg)
+        chan.on("game:await", function (msg) {
+          this.game_id = msg["game_id"]
+          console.log("Share your game id:" + this.game_id)
         });
 
         this.chan_lobby = chan
@@ -1166,6 +1173,8 @@ var App = (function () {
     start_new_game: {
       value: function start_new_game() {
         console.log("Start new game and share game_id");
+
+        this.chan_lobby.push("new:game", {})
       }
     },
     join_game: {
@@ -1173,11 +1182,6 @@ var App = (function () {
         console.log("JOIN to game_id: " + game_id);
       }
     },
-    push: {
-      value: function push(chunk) {
-        // this.chan.push("new:msg", { user: "client", body: chunk });
-      }
-    }
   });
 
   return App;
@@ -1206,23 +1210,9 @@ prompt.get({
     },
   }
 }, function (err, result) {
-  var app = new App(result.server, result.name);
+  var is_new_game = result.new_game.indexOf('y') == 0
+  var app = new App(result.server, result.name, is_new_game);
   app.init();
-  if (result.new_game.indexOf('y') == 0) {
-    app.start_new_game();
-  } else {
-    prompt.get({
-      properties: {
-        game_id: {
-          description: "Provide the game id:".magenta,
-          type: 'string',
-          required: true
-        }
-      }
-    }, function(err, result) {
-      app.join_game(result.game_id);
-    });
-  }
 });
 
 // child = exec("python gyro.py", function(error, stdout, stderr){
