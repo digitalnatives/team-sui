@@ -41,3 +41,6 @@ config :sui_server, SuiServer.Repo,
   database: "sui_server_dev",
   hostname: "localhost",
   pool_size: 10
+
+config :sui_server, :redis_connection,
+  host: "localhost"
