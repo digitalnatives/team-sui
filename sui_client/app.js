@@ -1214,10 +1214,10 @@ var App = (function () {
     },
     render: {
       value: function render() {
-        X = [255, 0, 0]  # Red
-        O = [255, 255, 255]  # White
+        var X = [255, 0, 0]  // Red
+        var O = [255, 255, 255] // White
 
-        question_mark = [
+        var question_mark = [
         O, O, O, X, X, O, O, O,
         O, O, X, O, O, X, O, O,
         O, O, O, O, O, X, O, O,
@@ -1228,7 +1228,7 @@ var App = (function () {
         O, O, O, X, O, O, O, O
         ];
 
-        child = exec("python render.py '" + question_mark + "'")
+        exec("python render.py '" + JSON.stringify(question_mark) + "'");
       }
     }
   });
@@ -1262,7 +1262,6 @@ prompt.get({
   var is_new_game = result.new_game.indexOf('y') == 0
   var app = new App(result.server, result.name, is_new_game);
   app.init();
-
   app.render();
 });
 
