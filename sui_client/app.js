@@ -1190,7 +1190,7 @@ var App = (function () {
         }, function(err, result) {
           this.game_id = result.game_id
           console.log("JOIN to game_id: " + this.game_id);
-          var chan = this.socket.channel("game:" + this.game_id, {});
+          var chan = this.socket.channel("play:" + this.game_id, {});
 
           chan.join().receive("ignore", function () {
             return console.log("[game]: auth error");

@@ -3,6 +3,7 @@ defmodule SuiServer.UserSocket do
 
   ## Channels
   channel "game:*", SuiServer.GameChannel
+  channel "play:*", SuiServer.GamePlayChannel
 
   ## Transports
   transport :websocket, Phoenix.Transports.WebSocket
@@ -20,7 +21,7 @@ defmodule SuiServer.UserSocket do
   # See `Phoenix.Token` documentation for examples in
   # performing token verification on connect.
   def connect(params, socket) do
-    {:ok, assign(socket, :user_id, params["username"])}
+    {:ok, assign(socket, :username, params["username"])}
   end
 
   # Socket id's are topics that allow you to identify all sockets for a given user:
