@@ -1178,8 +1178,38 @@ var App = (function () {
       }
     },
     join_game: {
-      value: function join_game(game_id) {
-        console.log("JOIN to game_id: " + game_id);
+      value: function join_game() {
+        prompt.get({
+          properties: {
+            game_id: {
+              description: "Provide the game id:".magenta,
+              type: 'string',
+              required: true
+            }
+          }
+        }, function(err, result) {
+          this.game_id = result.game_id
+          console.log("JOIN to game_id: " + this.game_id);
+          var chan = this.socket.channel("game:" + this.game_id, {});
+
+          chan.join().receive("ignore", function () {
+            return console.log("[game]: auth error");
+          }).receive("ok", function () {
+            return console.log("[game]: joined");
+          }).receive("error", function () {
+            return console.log("[game]: does not exists");
+          }).after(10000, function () {
+            return console.log("[game]: Connection interruption");
+          });
+          chan.onError(function (e) {
+            return console.log("[game]: something went wrong", e);
+          });
+          chan.onClose(function (e) {
+            return console.log("[game]: channel closed");
+          });
+
+          this.chan_game = chan
+        }.bind(this));
       }
     },
   });
