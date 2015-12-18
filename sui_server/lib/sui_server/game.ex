@@ -27,13 +27,19 @@ defmodule SuiServer.Game do
     game.status == "awaiting" || Enum.member?(game.players, username)
   end
 
-  def join(game, username) do
-    status = "ready"
-    {:ok, ~w(OK OK)} = RedisPool.pipeline([
-      ~w(HMSET game_status #{game.id} #{status}),
-      ~w(HMSET game:#{game.id} player2 #{username})
-    ])
+  def player_id(game, username) do
+    Enum.find_index(game.players, &(&1 == username))
+  end
 
-    find(game.id)
+  def join(game, username) do
+    if player_id(game, username) == nil do
+      {:ok, ~w(OK OK)} = RedisPool.pipeline([
+        ~w(HMSET game_status #{game.id} ready),
+        ~w(HMSET game:#{game.id} player2 #{username})
+      ])
+      find(game.id)
+    else
+      game
+    end
   end
 end
