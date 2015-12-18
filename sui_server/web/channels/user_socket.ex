@@ -2,7 +2,7 @@ defmodule SuiServer.UserSocket do
   use Phoenix.Socket
 
   ## Channels
-  channel "channels:*", SuiServer.GameChannel
+  channel "game:*", SuiServer.GameChannel
 
   ## Transports
   transport :websocket, Phoenix.Transports.WebSocket
