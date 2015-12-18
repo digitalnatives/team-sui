@@ -1105,59 +1105,68 @@ var _createClass = (function () { function defineProperties(target, props) { for
 
 var _classCallCheck = function (instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } };
 
+// TEAM S.U.I. client code
+
+var prompt = require('prompt');
+
 var App = (function () {
-  function App() {
-    var socket = new Socket("http://192.168.25.23:4000/socket", {
+  function App(server, player_name) {
+
+    var socket = new Socket(server, {
       logger: function (kind, msg, data) {
-        console.log("" + kind + ": " + msg, data);
+        console.log("" + kind + ": " + msg);
       },
       transport: WebSocketClient
     });
 
-    socket.connect({ user_id: "123" });
+    socket.connect({ player: player_name });
+    this.socket = socket
 
     socket.onOpen(function (ev) {
-      return console.log("OPEN", ev);
+      return console.log("OPEN");
     });
     socket.onError(function (ev) {
-      return console.log("ERROR", ev);
+      return console.log("ERROR");
     });
-    socket.onClose(function (e) {
-      return console.log("CLOSE", e);
+    socket.onClose(function (ev) {
+      return console.log("CLOSE");
     });
-
-    this.chan = socket.channel("rooms:lobby", {});
   }
 
   _prototypeProperties(App, null, {
     init: {
       value: function init() {
-        this.chan.join().receive("ignore", function () {
+        this.join_lobby()
+      }
+    },
+    join_lobby: {
+      value: function connect() {
+        var chan = this.socket.channel("lobby", {});
+
+        chan.join().receive("ignore", function () {
           return console.log("auth error");
         }).receive("ok", function () {
           return console.log("join ok");
         }).after(10000, function () {
           return console.log("Connection interruption");
         });
-        this.chan.onError(function (e) {
-          return console.log("something went wrong", e);
+        chan.onError(function (e) {
+          return console.log("something went wrong");
         });
-        this.chan.onClose(function (e) {
-          return console.log("channel closed", e);
+        chan.onClose(function (e) {
+          return console.log("channel closed");
         });
 
-        this.chan.on("new:msg", function (msg) {
+        chan.on("new:msg", function (msg) {
           console.log(msg)
         });
 
-        this.chan.on("user:entered", function (msg) {
-          console.log(msg)
-        });
+        this.chan_lobby = chan
       }
     },
     push: {
       value: function push(chunk) {
-        this.chan.push("new:msg", { user: "client", body: chunk });
+        // this.chan.push("new:msg", { user: "client", body: chunk });
       }
     }
   });
@@ -1165,17 +1174,37 @@ var App = (function () {
   return App;
 })();
 
-var app = new App();
-app.init();
+var prompt = require('prompt');
 
-process.stdin.on('readable', function() {
-  var chunk = process.stdin.read();
-  if (chunk !== null) {
-    app.push(chunk.toString());
+prompt.start();
+
+prompt.get({
+  properties: {
+    server: {
+      description: "Game server?".magenta,
+      type: 'string',
+      default: 'http://localhost:4000/socket',
+    },
+    name: {
+      description: "What is your name?".magenta,
+      type: 'string',
+      default: 'AnonyMouse'
+    },
+    new_game: {
+      message: "Would you like to start new game?".magenta,
+      validator: /y[es]*|n[o]?/,
+      default: 'yes'
+    },
   }
+}, function (err, result) {
+  console.log("You said your name is: ".cyan + result.name.cyan);
+  console.log("Decision: ".cyan + result.new_game.cyan);
+
+  var app = new App(result.server, result.name);
+  app.init();
 });
 
-child = exec("python gyro.py", function(error, stdout, stderr){
-});
+// child = exec("python gyro.py", function(error, stdout, stderr){
+// });
 
-console.log(child);
+// console.log(child);
