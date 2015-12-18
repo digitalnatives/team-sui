@@ -27,7 +27,7 @@ defmodule SuiServer.GameChannel do
 
   def handle_in("new:game", msg, socket) do
     game_id = SecureRandom.urlsafe_base64(4)
-    push socket, "new:msg", %{game_id: game_id }
+    push socket, "game:await", %{game_id: game_id }
     {:reply, :ok, assign(socket, :game_id, game_id)}
   end
 end
