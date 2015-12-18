@@ -500,8 +500,7 @@ var Socket = exports.Socket = (function () {
     this.reconnectTimer = new Timer(function () {
       return _this.connect(_this.params);
     }, this.reconnectAfterMs);
-    //this.endPoint = "" + endPoint + "/" + TRANSPORTS.websocket;
-    this.endPoint = endPoint;
+    this.endPoint = "" + endPoint + "/" + TRANSPORTS.websocket;
   }
 
   _prototypeProperties(Socket, null, {
