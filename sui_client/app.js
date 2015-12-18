@@ -1207,9 +1207,6 @@ prompt.get({
     },
   }
 }, function (err, result) {
-  console.log("You said your name is: ".cyan + result.name.cyan);
-  console.log("Decision: ".cyan + result.new_game.cyan);
-
   var app = new App(result.server, result.name);
   app.init();
   if (result.new_game.indexOf('y') == 0) {
