@@ -1164,6 +1164,16 @@ var App = (function () {
         this.chan_lobby = chan
       }
     },
+    start_new_game: {
+      value: function start_new_game() {
+        console.log("Start new game and share game_id");
+      }
+    },
+    join_game: {
+      value: function join_game(game_id) {
+        console.log("JOIN to game_id: " + game_id);
+      }
+    },
     push: {
       value: function push(chunk) {
         // this.chan.push("new:msg", { user: "client", body: chunk });
@@ -1202,6 +1212,21 @@ prompt.get({
 
   var app = new App(result.server, result.name);
   app.init();
+  if (result.new_game.indexOf('y') == 0) {
+    app.start_new_game();
+  } else {
+    prompt.get({
+      properties: {
+        game_id: {
+          description: "Provide the game id:".magenta,
+          type: 'string',
+          required: true
+        }
+      }
+    }, function(err, result) {
+      app.join_game(result.game_id);
+    });
+  }
 });
 
 // child = exec("python gyro.py", function(error, stdout, stderr){
