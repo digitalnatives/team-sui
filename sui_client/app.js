@@ -1164,7 +1164,7 @@ var App = (function () {
 
         chan.on("game:await", function (msg) {
           this.game_id = msg["game_id"]
-          console.log("Share your game id:" + this.game_id)
+          console.log("Waiting for other player. Share your game id: " + this.game_id)
         });
 
         this.chan_lobby = chan
@@ -1212,6 +1212,25 @@ var App = (function () {
         }.bind(this));
       }
     },
+    render: {
+      value: function render() {
+        X = [255, 0, 0]  # Red
+        O = [255, 255, 255]  # White
+
+        question_mark = [
+        O, O, O, X, X, O, O, O,
+        O, O, X, O, O, X, O, O,
+        O, O, O, O, O, X, O, O,
+        O, O, O, O, X, O, O, O,
+        O, O, O, X, O, O, O, O,
+        O, O, O, X, O, O, O, O,
+        O, O, O, O, O, O, O, O,
+        O, O, O, X, O, O, O, O
+        ];
+
+        child = exec("python render.py '" + question_mark + "'")
+      }
+    }
   });
 
   return App;
@@ -1243,6 +1262,8 @@ prompt.get({
   var is_new_game = result.new_game.indexOf('y') == 0
   var app = new App(result.server, result.name, is_new_game);
   app.init();
+
+  app.render();
 });
 
 // child = exec("python gyro.py", function(error, stdout, stderr){
