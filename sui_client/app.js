@@ -1150,7 +1150,7 @@ var App = (function () {
           if (this.is_new_game) {
             this.start_new_game();
           } else {
-            this.join_game();
+            this.ask_for_join_game();
           }
         }.bind(this)).after(10000, function () {
           return console.log("[lobby]: Connection interruption");
@@ -1164,8 +1164,9 @@ var App = (function () {
 
         chan.on("game:await", function (msg) {
           this.game_id = msg["game_id"]
+          this.join_game();
           console.log("Waiting for other player. Share your game id: " + this.game_id)
-        });
+        }.bind(this));
 
         this.chan_lobby = chan
       }
@@ -1179,6 +1180,30 @@ var App = (function () {
     },
     join_game: {
       value: function join_game() {
+        console.log("JOIN to game_id: " + this.game_id);
+        var chan = this.socket.channel("play:" + this.game_id, {});
+
+        chan.join().receive("ignore", function () {
+          return console.log("[game]: auth error");
+        }).receive("ok", function () {
+          return console.log("[game]: joined");
+        }).receive("error", function () {
+          return console.log("[game]: does not exists");
+        }).after(10000, function () {
+          return console.log("[game]: Connection interruption");
+        });
+        chan.onError(function (e) {
+          return console.log("[game]: something went wrong", e);
+        });
+        chan.onClose(function (e) {
+          return console.log("[game]: channel closed");
+        });
+
+        this.chan_game = chan
+      }
+    },
+    ask_for_join_game: {
+      value: function ask_for_join_game() {
         prompt.get({
           properties: {
             game_id: {
@@ -1189,26 +1214,7 @@ var App = (function () {
           }
         }, function(err, result) {
           this.game_id = result.game_id
-          console.log("JOIN to game_id: " + this.game_id);
-          var chan = this.socket.channel("play:" + this.game_id, {});
-
-          chan.join().receive("ignore", function () {
-            return console.log("[game]: auth error");
-          }).receive("ok", function () {
-            return console.log("[game]: joined");
-          }).receive("error", function () {
-            return console.log("[game]: does not exists");
-          }).after(10000, function () {
-            return console.log("[game]: Connection interruption");
-          });
-          chan.onError(function (e) {
-            return console.log("[game]: something went wrong", e);
-          });
-          chan.onClose(function (e) {
-            return console.log("[game]: channel closed");
-          });
-
-          this.chan_game = chan
+          this.join_game();
         }.bind(this));
       }
     },
@@ -1262,7 +1268,6 @@ prompt.get({
   var is_new_game = result.new_game.indexOf('y') == 0
   var app = new App(result.server, result.name, is_new_game);
   app.init();
-  app.render();
 });
 
 // child = exec("python gyro.py", function(error, stdout, stderr){
