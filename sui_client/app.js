@@ -1203,15 +1203,14 @@ var App = (function () {
 
         chan.on("game:start", function (msg) {
           console.log("Game " + this.game_id + " started");
-          //fs.truncate('boards.txt', 0, function(){console.log('boards.txt truncated')})
-          //fs.truncate('moves.txt', 0, function(){console.log('moves.txt truncated')})
           this.gyro_child = exec("python gyro.py moves.txt", function(error, stdout, stderr){
             console.log(error);
           });
           this.render_child = exec("python render.py boards.txt", function(error, stdout, stderr){
             console.log(error);
           });
-          this.renderMove(msg);
+          this.render(msg);
+          this.move(500);
         }.bind(this));
 
         chan.on("game:state", this.renderMove.bind(this));
@@ -1236,13 +1235,14 @@ var App = (function () {
       }
     },
     move: {
-      value: function move() {
+      value: function move(delay) {
+        setTimeout(function() {
+          var data = fs.readFileSync("moves.txt", "utf8");
+          var lines = data.trim().split('\n');
+          var lastLine = lines.slice(-1)[0];
 
-        var data = fs.readFileSync("moves.txt", "utf8");
-        var lines = data.trim().split('\n');
-        var lastLine = lines.slice(-1)[0];
-
-        this.chan_game.push("new:move", { 'move': JSON.parse(lastLine) });
+          this.chan_game.push("new:move", { 'move': JSON.parse(lastLine) });
+        }.bind(this), delay);
       }
     },
     render: {
@@ -1254,7 +1254,7 @@ var App = (function () {
     renderMove: {
       value: function(msg) {
         this.render(msg.board);
-        this.move();
+        this.move(200);
       }
     }
   });

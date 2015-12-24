@@ -26,7 +26,9 @@ def get_orientation(sense):
     return {'pitch': filtered_samples[0], 'roll': filtered_samples[1]}
 
 file_name = sys.argv[1]
-moves_file = open(file_name, "a")
+
+with open(file_name, "a+") as moves_file:
+    moves_file.write("[0, 0]\n")
 
 while True:
     orientation = get_orientation(sense)
@@ -35,4 +37,4 @@ while True:
     roll = tilt(orientation['roll'])
     with open(file_name, "a+") as moves_file:
         moves_file.write("[{pitch}, {roll}]\n".format(**{'pitch': pitch, 'roll': roll}))
-    time.sleep(0.2)
+    time.sleep(0.1)

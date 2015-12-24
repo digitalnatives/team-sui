@@ -16,4 +16,4 @@ with open(file_name) as boards_file:
         if pixels_json != "":
             matrix = json.loads(pixels_json)
             sense.set_pixels(matrix)
-        time.sleep(0.1)
+        time.sleep(0.01)
