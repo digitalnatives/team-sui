@@ -1,7 +1,9 @@
 "use strict";
 
 var WebSocketClient = require('websocket').w3cwebsocket;
-var exec = require('child_process').exec, child;
+var exec            = require('child_process').exec, child;
+var fs              = require('fs');
+var prompt          = require('prompt');
 
 var _prototypeProperties = function (child, staticProps, instanceProps) { if (staticProps) Object.defineProperties(child, staticProps); if (instanceProps) Object.defineProperties(child.prototype, instanceProps); };
 
@@ -1110,8 +1112,8 @@ var prompt = require('prompt');
 
 var App = (function () {
   function App(server, player_name, is_new_game) {
-    this.is_new_game = is_new_game
-    this.game_id = ''
+    this.is_new_game = is_new_game;
+    this.game_id = '';
 
     var socket = new Socket(server, {
       logger: function (kind, msg, data) {
@@ -1121,7 +1123,7 @@ var App = (function () {
     });
 
     socket.connect({ username: player_name });
-    this.socket = socket
+    this.socket = socket;
 
     socket.onOpen(function (ev) {
       return console.log("OPEN");
@@ -1137,7 +1139,7 @@ var App = (function () {
   _prototypeProperties(App, null, {
     init: {
       value: function init() {
-        this.join_lobby()
+        this.join_lobby();
       }
     },
     join_lobby: {
@@ -1163,9 +1165,9 @@ var App = (function () {
         });
 
         chan.on("game:await", function (msg) {
-          this.game_id = msg["game_id"]
+          this.game_id = msg["game_id"];
           this.join_game();
-          console.log("Waiting for other player. Share your game id: " + this.game_id)
+          console.log("Waiting for other player. Share your game id: " + this.game_id);
         }.bind(this));
 
         this.chan_lobby = chan
@@ -1175,7 +1177,7 @@ var App = (function () {
       value: function start_new_game() {
         console.log("Start new game and share game_id");
 
-        this.chan_lobby.push("new:game", {})
+        this.chan_lobby.push("new:game", {});
       }
     },
     join_game: {
@@ -1199,7 +1201,22 @@ var App = (function () {
           return console.log("[game]: channel closed");
         });
 
-        this.chan_game = chan
+        chan.on("game:start", function (msg) {
+          console.log("Game " + this.game_id + " started");
+          //fs.truncate('boards.txt', 0, function(){console.log('boards.txt truncated')})
+          //fs.truncate('moves.txt', 0, function(){console.log('moves.txt truncated')})
+          this.gyro_child = exec("python gyro.py moves.txt", function(error, stdout, stderr){
+            console.log(error);
+          });
+          this.render_child = exec("python render.py boards.txt", function(error, stdout, stderr){
+            console.log(error);
+          });
+          this.renderMove(msg);
+        }.bind(this));
+
+        chan.on("game:state", this.renderMove.bind(this));
+
+        this.chan_game = chan;
       }
     },
     ask_for_join_game: {
@@ -1213,36 +1230,37 @@ var App = (function () {
             }
           }
         }, function(err, result) {
-          this.game_id = result.game_id
+          this.game_id = result.game_id;
           this.join_game();
         }.bind(this));
       }
     },
+    move: {
+      value: function move() {
+
+        var data = fs.readFileSync("moves.txt", "utf8");
+        var lines = data.trim().split('\n');
+        var lastLine = lines.slice(-1)[0];
+
+        this.chan_game.push("new:move", { 'move': JSON.parse(lastLine) });
+      }
+    },
     render: {
-      value: function render() {
-        var X = [255, 0, 0]  // Red
-        var O = [255, 255, 255] // White
-
-        var question_mark = [
-        O, O, O, X, X, O, O, O,
-        O, O, X, O, O, X, O, O,
-        O, O, O, O, O, X, O, O,
-        O, O, O, O, X, O, O, O,
-        O, O, O, X, O, O, O, O,
-        O, O, O, X, O, O, O, O,
-        O, O, O, O, O, O, O, O,
-        O, O, O, X, O, O, O, O
-        ];
-
-        exec("python render.py '" + JSON.stringify(question_mark) + "'");
+      value: function render(board) {
+        fs.appendFile('boards.txt', JSON.stringify(board) + "\n", function (err) {
+        });
+      }
+    },
+    renderMove: {
+      value: function(msg) {
+        this.render(msg.board);
+        this.move();
       }
     }
   });
 
   return App;
 })();
-
-var prompt = require('prompt');
 
 prompt.start();
 
@@ -1265,12 +1283,8 @@ prompt.get({
     },
   }
 }, function (err, result) {
-  var is_new_game = result.new_game.indexOf('y') == 0
+  var is_new_game = result.new_game.indexOf('y') == 0;
   var app = new App(result.server, result.name, is_new_game);
   app.init();
 });
 
-// child = exec("python gyro.py", function(error, stdout, stderr){
-// });
-
-// console.log(child);

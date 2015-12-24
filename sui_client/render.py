@@ -1,29 +1,19 @@
 #!/usr/bin/python
-import sys
-import time
-import math
-import json
+import sys, time, math, json
 from sense_hat import SenseHat
 
 sense = SenseHat()
 sense.clear()
 
-# Example matrix, provide it through the command line as string:
-# $ python render.py '[[0,1,2], [2, 3, 3], ...]'
-#
-# X = [255, 0, 0]  # Red
-# O = [255, 255, 255]  # White
-# question_mark = [
-# O, O, O, X, X, O, O, O,
-# O, O, X, O, O, X, O, O,
-# O, O, O, O, O, X, O, O,
-# O, O, O, O, X, O, O, O,
-# O, O, O, X, O, O, O, O,
-# O, O, O, X, O, O, O, O,
-# O, O, O, O, O, O, O, O,
-# O, O, O, X, O, O, O, O
-# ]
+file_name = sys.argv[1]
 
-matrix = json.loads(sys.argv[1])
+with open(file_name, "a+") as boards_file:
+    boards_file.truncate()
 
-sense.set_pixels(matrix)
+with open(file_name) as boards_file:
+    while(True):
+        pixels_json = boards_file.readline()
+        if pixels_json != "":
+            matrix = json.loads(pixels_json)
+            sense.set_pixels(matrix)
+        time.sleep(0.1)

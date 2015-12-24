@@ -16,8 +16,25 @@ defmodule SuiServer.GamePlayChannel do
   end
 
   def handle_info({:game_connect, %{game: game, username: username}}, socket) do
-    Game.join(game, username)
+    game = Game.join(game, username)
     broadcast! socket, "player:connected", %{username: username}
+    if game.status == "ready" || game.status == "playing" do
+      send(self, {:game_start, %{game: game}})
+    end
     {:noreply, socket}
+  end
+
+  def handle_info({:game_start, %{game: game}}, socket) do
+    game = Game.new_status(game, "playing")
+    broadcast! socket, "game:start", game
+    {:noreply, socket}
+  end
+
+  def handle_in("new:move", %{"move" => move}, socket) do
+    "play:" <> game_id = socket.topic
+    game = Game.find(game_id)
+            |> Game.new_move(socket.assigns.username, move)
+    push socket, "game:state", game
+    {:reply, :ok, socket}
   end
 end
