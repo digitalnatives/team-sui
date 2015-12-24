@@ -1239,7 +1239,7 @@ var App = (function () {
         setTimeout(function() {
           var data = fs.readFileSync("moves.txt", "utf8");
           var lines = data.trim().split('\n');
-          var lastLine = lines.slice(-1)[0];
+          var lastLine = lines.slice(-1)[0] || "[0, 0]";
 
           this.chan_game.push("new:move", { 'move': JSON.parse(lastLine) });
         }.bind(this), delay);

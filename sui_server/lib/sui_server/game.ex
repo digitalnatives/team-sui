@@ -9,7 +9,7 @@ defmodule SuiServer.Game do
     {:ok, ~w(OK OK OK)} = RedisPool.pipeline([
       ~w(HMSET game_status #{id} #{status}),
       ~w(HMSET game:#{id} player1 #{username}),
-      ~w(HMSET game:#{id} board #{Poison.encode!(map)})
+      ~w(HMSET game:#{id} board #{encode_board(map)})
     ])
 
     %{id: id, status: status, players: [username]}
@@ -22,23 +22,23 @@ defmodule SuiServer.Game do
       ~w(HMGET game:#{id} board)
     ])
 
-    %{id: id, status: status, players: players, board: Poison.decode!(board)}
+    %{id: id, status: status, players: players, board: decode_board(board)}
   end
 
   def map do
-    r = [255, 0, 0]
-    b = [0, 0, 255]
-    o = [0, 0, 0]
+    a = 1
+    b = 2
+    e = 0
 
     [
-      o, o, o, o, o, o, o, b,
-      o, o, o, o, o, o, o, o,
-      o, o, o, o, o, o, o, o,
-      o, o, o, o, o, o, o, o,
-      o, o, o, o, o, o, o, o,
-      o, o, o, o, o, o, o, o,
-      o, o, o, o, o, o, o, o,
-      r, o, o, o, o, o, o, o
+      e, e, e, e, e, e, e, b,
+      e, e, e, e, e, e, e, e,
+      e, e, e, e, e, e, e, e,
+      e, e, e, e, e, e, e, e,
+      e, e, e, e, e, e, e, e,
+      e, e, e, e, e, e, e, e,
+      e, e, e, e, e, e, e, e,
+      a, e, e, e, e, e, e, e
     ]
   end
 
@@ -68,7 +68,15 @@ defmodule SuiServer.Game do
   end
 
   def new_move(game, username, move) do
-    {:ok, "OK"} = RedisPool.command(~w(HMSET game:#{game.id} board #{Poison.encode!(Enum.take_random(game.board, 64))}))
+    {:ok, "OK"} = RedisPool.command(~w(HMSET game:#{game.id} board #{encode_board(Enum.take_random(game.board, 64))}))
     find(game.id)
+  end
+
+  defp encode_board(board) do
+    Poison.encode!(board)
+  end
+
+  defp decode_board(board) do
+    Poison.decode!(board)
   end
 end
