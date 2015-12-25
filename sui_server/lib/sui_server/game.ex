@@ -6,23 +6,21 @@ defmodule SuiServer.Game do
   def create(username) do
     id = SecureRandom.urlsafe_base64(4)
     status = "awaiting"
-    {:ok, ~w(OK OK OK)} = RedisPool.pipeline([
+    {:ok, ~w(OK OK)} = RedisPool.pipeline([
       ~w(HMSET game_status #{id} #{status}),
-      ~w(HMSET game:#{id} player1 #{username}),
-      ~w(HMSET game:#{id} board #{encode_board(map)})
+      ~w(HMSET game:#{id} player1 #{username} board #{encode_board(map)} turn1 0 turn2 0),
     ])
 
     %{id: id, status: status, players: [username]}
   end
 
   def find(id) do
-    {:ok, [[status], players, board]} = RedisPool.pipeline([
+    {:ok, [[status], [player1, player2, board, turn1, turn2]]} = RedisPool.pipeline([
       ~w(HMGET game_status #{id}),
-      ~w(HMGET game:#{id} player1 player2),
-      ~w(HMGET game:#{id} board)
+      ~w(HMGET game:#{id} player1 player2 board turn1 turn2),
     ])
 
-    %{id: id, status: status, players: players, board: decode_board(board)}
+    %{id: id, status: status, players: [player1, player2], board: decode_board(board), turns: [turn1, turn2]}
   end
 
   def map do
@@ -47,7 +45,10 @@ defmodule SuiServer.Game do
   end
 
   def player_id(game, username) do
-    Enum.find_index(game.players, &(&1 == username))
+    case Enum.find_index(game.players, &(&1 == username)) do
+       nil -> nil
+       n -> n + 1
+    end
   end
 
   def join(game, username) do
@@ -68,8 +69,38 @@ defmodule SuiServer.Game do
   end
 
   def new_move(game, username, move) do
-    {:ok, "OK"} = RedisPool.command(~w(HMSET game:#{game.id} board #{encode_board(Enum.take_random(game.board, 64))}))
+    board = make_turn(game, username, move)
+    {:ok, "OK"} = RedisPool.command(~w(HMSET game:#{game.id} board #{encode_board(board)}))
     find(game.id)
+  end
+
+  defp make_turn(game, username, move) do
+    player = player_id(game, username)
+    case step_outcome(game, move, player) do
+      :forbidden -> game.board
+      {:move, index, new_index } -> Enum.with_index(game.board)
+      |> Enum.map fn {cell, cell_index} ->
+        case cell_index do
+          ^new_index -> player
+          ^index -> 0
+          _ -> cell
+        end
+      end
+    end
+  end
+
+  defp step_outcome(game, move, player) do
+    index = Enum.find_index(game.board, &(&1 == player))
+    x = div(index, 8) + List.last(move)
+    y = rem(index, 8) + List.first(move)
+    new_index = 8 * x + y
+    cell = Enum.at(game.board, new_index)
+    cond do
+      x < 0 || x > 7 -> :forbidden
+      y < 0 || y > 7 -> :forbidden
+      cell == 0 || cell == player -> {:move, index, new_index }
+      true -> :forbidden
+    end
   end
 
   defp encode_board(board) do
