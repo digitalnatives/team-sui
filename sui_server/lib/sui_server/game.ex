@@ -1,7 +1,12 @@
 defmodule SuiServer.Game do
   alias SuiServer.RedisPool
 
-  defstruct id: nil, status: nil, players: []
+  defstruct id: nil, status: nil, players: [], turns: []
+
+  def all do
+    {:ok, games} = RedisPool.command(~w(HGETALL game_status))
+    Enum.chunk(games, 2) |> Enum.map fn[id, status] -> %{id: id, status: status} end
+  end
 
   def create(username) do
     id = SecureRandom.urlsafe_base64(4)
@@ -24,9 +29,10 @@ defmodule SuiServer.Game do
   end
 
   def map do
-    a = 1
-    b = 2
-    e = 0
+    e = 0 # empty
+    a = 1 # player A
+    b = 2 # player B
+    s = 3 # stone
 
     [
       e, e, e, e, e, e, e, b,
