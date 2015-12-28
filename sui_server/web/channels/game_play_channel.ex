@@ -1,6 +1,7 @@
 defmodule SuiServer.GamePlayChannel do
   use Phoenix.Channel
   alias SuiServer.Game
+  alias Phoenix.PubSub
 
   def join("play:" <> game_id, _message, socket) do
     username = socket.assigns.username
@@ -27,6 +28,7 @@ defmodule SuiServer.GamePlayChannel do
   def handle_info({:game_start, %{game: game}}, socket) do
     game = Game.new_status(game, "playing")
     broadcast! socket, "game:start", game
+    notify_game_channel(socket, game.id, {:start, game})
     {:noreply, socket}
   end
 
@@ -35,6 +37,11 @@ defmodule SuiServer.GamePlayChannel do
     game = Game.find(game_id)
             |> Game.new_move(socket.assigns.username, move)
     push socket, "game:state", game
+    notify_game_channel(socket, game_id, {:update, game})
     {:reply, :ok, socket}
+  end
+
+  defp notify_game_channel(socket, game_id, {event, game}) do
+    PubSub.broadcast socket.pubsub_server, "game:#{game_id}", {"game:#{event}", game}
   end
 end

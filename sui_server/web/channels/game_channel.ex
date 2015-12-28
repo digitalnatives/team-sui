@@ -9,12 +9,22 @@ defmodule SuiServer.GameChannel do
     {:ok, socket}
   end
 
+  def join("game:" <> _game_id, _message, socket) do
+    Process.flag(:trap_exit, true)
+    {:ok, socket}
+  end
+
   def handle_info({:new_player, username: username }, socket) do
     broadcast! socket, "player:entered", %{name: username}
     {:noreply, socket}
   end
 
-  def handle_in("new:game", msg, socket) do
+  def handle_info({"game:" <> event, game}, socket) do
+    broadcast! socket, "game:#{event}", game
+    {:noreply, socket}
+  end
+
+  def handle_in("new:game", _msg, socket) do
     username = socket.assigns.username
     game = Game.create(username)
     broadcast! socket, "new:game", %{game_id: game.id, username: username}
