@@ -1,6 +1,6 @@
 defmodule SuiServer.GameChannel do
   use Phoenix.Channel
-  alias SuiServer.Game
+  alias SuiServer.NewGame, as: Game
 
   def join("game:lobby", _message, socket) do
     Process.flag(:trap_exit, true)
@@ -26,9 +26,9 @@ defmodule SuiServer.GameChannel do
 
   def handle_in("new:game", _msg, socket) do
     username = socket.assigns.username
-    game = Game.create(username)
-    broadcast! socket, "new:game", %{game_id: game.id, username: username}
-    push socket, "game:await", %{game_id: game.id }
-    {:reply, :ok, assign(socket, :game_id, game.id)}
+    {:ok, game} = Game.create(%{player1: username})
+    broadcast! socket, "new:game", %{game_id: game.token, username: username}
+    push socket, "game:await", %{game_id: game.token }
+    {:reply, :ok, assign(socket, :game_id, game.token)}
   end
 end

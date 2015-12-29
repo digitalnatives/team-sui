@@ -38,7 +38,8 @@ defmodule SuiServer.Mixfile do
      {:gettext, "~> 0.9"},
      {:cowboy, "~> 1.0"},
      {:secure_random, "~> 0.2"},
-     {:redix, ">= 0.0.0"}
+     {:redix, ">= 0.0.0"},
+     {:ecto_enum, ">= 0.3.0"},
    ]
   end
 

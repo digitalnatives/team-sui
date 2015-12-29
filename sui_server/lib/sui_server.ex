@@ -10,7 +10,7 @@ defmodule SuiServer do
       # Start the endpoint when the application starts
       supervisor(SuiServer.Endpoint, []),
       # Start the Ecto repository
-      # supervisor(SuiServer.Repo, []),
+      supervisor(SuiServer.Repo, []),
       supervisor(SuiServer.RedisPool, []),
       # Here you could define other workers and supervisors as children
       # worker(SuiServer.Worker, [arg1, arg2, arg3]),
